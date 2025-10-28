@@ -8,7 +8,7 @@ version = "0.0.1"
 authors = [
   { name="César Ordóñez", email="cesar.ordonez@unige.ch" },
 ]
-description = "A small example package"
+description = "A package to calculate GHG emissions from aquatic ecosystems"
 readme = "README.md"
 requires-python = ">=3.12"
 classifiers = [
@@ -19,6 +19,6 @@ license = "MIT"
 license-files = ["LICEN[CS]E*"]
 dependencies = ["pandas>=2.3.3", "numpy>=2.3.4"]
 
-# [project.urls]
-# Homepage = "https://github.com/pypa/sampleproject"
-# Issues = "https://github.com/pypa/sampleproject/issues"
+[project.urls]
+Homepage = "https://github.com/ceordonez/PyGHGaq"
+Issues = "https://github.com/ceordonez/PyGHGaq/issues"

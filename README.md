@@ -1,6 +1,6 @@
 # PyGHGaq 
 
-This package contains different methods and proporties to estimate GHG (CH$_4$ and CO$_2$) emissions and concentrations for aquatic ecosystems
+This package contains different methods and properties to estimate GHG ($\text{CH}_4$ and $\text{CO}_2$) emissions and concentrations for aquatic ecosystems
 
 ## Installation
 pip install pyghgaq
