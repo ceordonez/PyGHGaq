@@ -13,7 +13,7 @@ def csat(
     return atmpress_hpa * catm_ppm * hcp_molm3pa * 1e-2
 
 
-def atm_dif_flux(
+def atm_diff_flux(
     csat_mmolm3: np.ndarray, cw_mmolm3: np.ndarray, k_md: np.ndarray
 ) -> np.ndarray:
     """
