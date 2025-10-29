@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PyGHGaq"
-version = "0.0.4"
+version = "0.0.5"
 authors = [
   { name="César Ordóñez", email="cesar.ordonez@unige.ch" },
 ]
@@ -17,7 +17,7 @@ classifiers = [
 ]
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
-dependencies = ["pandas>=2.3.3", "numpy>=2.3.4"]
+dependencies = ["pandas>=2.3.3", "numpy>=2.3.4", "PyYaml"]
 
 [project.urls]
 Homepage = "https://github.com/ceordonez/PyGHGaq"
