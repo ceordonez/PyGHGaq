@@ -1,6 +1,7 @@
 import numpy as np
-from functions.functions import read_constant
-from registry.henry_registry import register_hcp
+from functions.read import read_constant
+from registry.registry import register_hcp, register_schmidt
+
 
 @register_hcp("CO2", "Weisenburg")
 def hcp_sal_co2(
@@ -37,3 +38,10 @@ def hcp_sanders(
     dlnHcpd1_T = constant[varname]["dlnHdT"]
     hcp_t = hcp25 * np.exp(dlnHcpd1_T * (1 / (temp_c + 273.15) - 1 / 298.15))
     return hcp_t
+
+
+@register_schmidt("CO2")
+def schmidt_number(temp_c):
+    constant = read_constant()
+    const = constant["CO2"]["SCH"][::-1]
+    return np.polyval(const, temp_c)

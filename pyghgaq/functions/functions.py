@@ -1,17 +1,33 @@
-import yaml
+import importlib
 
-def read_constant(filename:str="./constant.yml") -> dict:
-    """Read constant file.
+import numpy as np
 
-    Parameters
-    ----------
-    filename : Path to constant file.
+# import inspect
 
-    Return
-    -----
-    conf_file : 
-        Constant data.
-    """
-    with open(filename, "r") as file:
-        conf_file = yaml.safe_load(file)
-    return conf_file
+
+# def _update_henry_coefficient_doc(henry_coefficient):
+#     """Generate a dynamic docstring listing all registered exporters."""
+#     ## NOT IMPLEMENTED YET
+#
+#     lines = ["Available exporters and their expected parameters:\n"]
+#
+#     from registry.registry import exportershcp
+#
+#     for varname, methods in exportershcp.items():
+#         for method, func in methods.items():
+#             sig = inspect.signature(func)
+#             lines.append(f"  {varname} / {method}{sig}")
+#     henry_coefficient.__doc__ = "\n".join(lines)
+#
+
+
+def schmidt_number(varname: str, temp_c: np.ndarray | float):
+    from registry.registry import exporterssh
+
+    importlib.import_module(f"gases.{varname}")
+    exporter = exporterssh.get(varname)
+    if exporter is None:
+        raise ValueError(
+            f"Schmit number calcultion for '{varname}' gas has not been implemented"
+        )
+    return exporter(temp_c)
