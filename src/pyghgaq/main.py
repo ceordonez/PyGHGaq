@@ -15,7 +15,7 @@ def csat(
     -------
     Concentration of saturation in mmolm3
     """
-    return atmpress_hpa * catm_ppm * hcp_molm3pa * 1e-2
+    return atmpress_hpa * catm_ppm * hcp_molm3pa * 1E-1
 
 
 def atm_diff_flux(
