@@ -1,6 +1,6 @@
 import numpy as np
-from functions.read import read_constant
-from registry.registry import register_hcp, register_schmidt
+from pyghgaq.functions.read import read_constant
+from pyghgaq.registry.registry import register_hcp, register_schmidt
 
 
 @register_hcp("CH4", "Weisenburg")

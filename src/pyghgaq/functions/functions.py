@@ -22,9 +22,9 @@ import numpy as np
 
 
 def schmidt_number(varname: str, temp_c: np.ndarray | float):
-    from registry.registry import exporterssh
+    from pyghgaq.registry.registry import exporterssh
 
-    importlib.import_module(f"gases.{varname}")
+    importlib.import_module(f"pyghgaq.gases.{varname}")
     exporter = exporterssh.get(varname)
     if exporter is None:
         raise ValueError(

@@ -1,5 +1,5 @@
 import numpy as np
-from registry.registry import register_k600
+from pyghgaq.registry.registry import register_k600
 
 
 @register_k600("VP2013")
@@ -101,7 +101,7 @@ def kx_k600(
     kx : velocity transfer coefficient (md-1)
     """
 
-    from functions.functions import schmidt_number
+    from pyghgaq.functions.functions import schmidt_number
 
     # Prairie and del Giorgo 2013
     if isinstance(u10_ms, np.ndarray):

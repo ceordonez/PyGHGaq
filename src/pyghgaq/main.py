@@ -35,8 +35,8 @@ def henry_coefficient(
     varname: str, method: str = "Sanders", **kwards
 ) -> np.ndarray | float:
 
-    import gases
-    from registry.registry import exportershcp
+    from pyghgaq import gases
+    from pyghgaq.registry.registry import exportershcp
 
     gasnames = []
     for _, modulename, _ in pkgutil.iter_modules(gases.__path__):
@@ -47,7 +47,7 @@ def henry_coefficient(
             f"{varname} is not included as gas to be analyze \b Valid gases are {gasnames}"
         )
 
-    importlib.import_module(f"gases.{varname}")
+    importlib.import_module(f"pyghgaq.gases.{varname}")
     exporter = exportershcp.get(varname, {}).get(method)
 
     if exporter is None:
@@ -68,9 +68,9 @@ def k600(k600_method: str = "MA2010-NB", **kwards):
     k600 : velocity transfer coefficient (md-1)
     """
 
-    from registry.registry import exportersk600
+    from pyghgaq.registry.registry import exportersk600
 
-    importlib.import_module("functions.k600_functions")
+    importlib.import_module("pyghgaq.functions.k600_functions")
 
     exporter = exportersk600.get(k600_method)
     if exporter is None:
@@ -102,7 +102,7 @@ def k600_to_kx(
     ------
     kx : gas transfer coefficient
     """
-    from functions.k600_functions import kx_k600
+    from pyghgaq.functions.k600_functions import kx_k600
 
     return kx_k600(varname, temp_c, k600, u10_ms, 1)
 
@@ -126,13 +126,13 @@ def kx_to_k600(
     ------
     k600 : normalized gas transfer coefficient
     """
-    from functions.k600_functions import kx_k600
+    from pyghgaq.functions.k600_functions import kx_k600
 
     return kx_k600(varname, temp_c, kx, u10_ms, -1)
 
 
 def schmidt_number(varname: str, temp_c: np.ndarray | float):
-    from functions.functions import schmidt_number
+    from pyghgaq.functions.functions import schmidt_number
 
     """Calculates Schmidt number for gases
 
