@@ -1,5 +1,6 @@
 from functools import wraps
 from typing import Any, Callable
+from pyghgaq.functions.units import to_si
 
 import numpy as np
 
@@ -44,4 +45,19 @@ def register_schmidt(method: str):
         exporterssh[method] = wrapper
         return wrapper
 
+    return decorator
+
+def enforce_units(**expected_units):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            from inspect import signature
+            sig = signature(func)
+            bound = sig.bind(*args, **kwargs)
+            bound.apply_defaults()
+
+            for name, exp_unit in expected_units.items():
+                if name in bound.arguments:
+                    bound.arguments[name] = to_si(bound.arguments[name], exp_unit)
+            return func(*bound.args, **bound.kwargs)
+        return wrapper
     return decorator

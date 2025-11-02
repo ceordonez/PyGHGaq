@@ -44,4 +44,4 @@ def hcp_sanders(
 def schmidt_number(temp_c):
     constant = read_constant()
     const = constant["CO2"]["SCH"][::-1]
-    return np.polyval(const, temp_c)
+    return np.polyval(const, temp_c.magnitude)

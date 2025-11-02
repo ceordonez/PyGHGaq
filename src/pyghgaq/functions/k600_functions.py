@@ -1,5 +1,7 @@
 import numpy as np
-from pyghgaq.registry.registry import register_k600
+import pint
+
+from pyghgaq.registry.registry import enforce_units, register_k600
 
 
 @register_k600("VP2013")
@@ -15,7 +17,8 @@ def k600_VP2013(u10_ms: np.ndarray | float, area_km2: float) -> np.ndarray | flo
     ------
     k600 : velocity transfer coefficient (cmh-1)
     """
-    return 2.51 + 1.48 * u10_ms + 0.39 * u10_ms * np.log10(area_km2)
+    k600 = 2.51 + 1.48 * u10_ms + 0.39 * u10_ms * np.log10(area_km2)
+    return
 
 
 @register_k600("MA2010-NB")
@@ -78,13 +81,14 @@ def k600_CC1998(u10_ms: np.ndarray | float) -> np.ndarray | float:
     return 2.07 + 0.215 * u10_ms**1.7
 
 
-def kx_k600(
+@enforce_units(temp_c="K", k="m/s", u10_ms="m/s")
+def kgas_k600(
     varname: str,
-    temp_c: np.ndarray | float,
-    k: np.ndarray | float,
-    u10_ms: np.ndarray | float,
+    temp_c: pint.Quantity,
+    k: pint.Quantity,
+    u10_ms: pint.Quantity,
     a: int = 1,
-) -> np.ndarray | float:
+) -> pint.Quantity:
     """Calculates gas transfer coefficient kgas from k600 or vicecersa
 
     Parameters:
@@ -98,15 +102,17 @@ def kx_k600(
 
     Return
     ------
-    kx : velocity transfer coefficient (md-1)
+    kgas : velocity transfer coefficient (md-1)
     """
 
     from pyghgaq.functions.functions import schmidt_number
 
+    print(u10_ms)
+    __import__('pdb').set_trace()
     # Prairie and del Giorgo 2013
-    if isinstance(u10_ms, np.ndarray):
-        n = np.ones(len(u10_ms)) * 1 / 2
-        n = np.where(u10_ms > 3.7, n, 2 / 3.0)
+    if isinstance(u10_ms, pint.Quantity):
+        n = np.ones(len(u10_ms.magnitude)) * 1 / 2
+        n = np.where(u10_ms.magnitude > 3.7, n, 2 / 3.0)
     else:
         n = 2 / 3.0
         if u10_ms < 3.7:

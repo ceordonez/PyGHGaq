@@ -45,7 +45,7 @@ def hcp_sanders(
     return hcp_t
 
 @register_schmidt("CH4")
-def schmit_number(temp_c):
+def schmit_number(temp):
     constant = read_constant()
     const = constant["CO2"]["SCH"][::-1]
-    return np.polyval(const, temp_c)
+    return np.polyval(const, temp.magnitude)
