@@ -3,9 +3,9 @@ import inspect
 import pkgutil
 
 import numpy as np
-from pint import UnitRegistry
 
-ureg = UnitRegistry()
+from pyghgaq.functions.type_utils import Numeric
+from pyghgaq.registry.registry import warn_default_units
 
 
 def csat(
@@ -48,9 +48,14 @@ def atm_diff_flux(
     return kgas * (cw - csat)
 
 
+@warn_default_units
 def henry_coefficient(
-    varname: str, method: str = "Sanders", **kwards
-) -> np.ndarray | float:
+    varname: str,
+    temp: np.ndarray | float,
+    method: str = "Sanders",
+    units: dict[str, str] = {"temp": "degC", "salt": "PSU", "catm": "ppm"},
+    **kwargs,
+) -> Numeric:
 
     from pyghgaq import gases
     from pyghgaq.registry.registry import exportershcp
@@ -71,13 +76,13 @@ def henry_coefficient(
         raise ValueError(
             f"No method ='{method}' found for varname='{varname}' or '{varname}' is not included in functions \n Supported method for '{varname}' are {list(exportershcp.get(varname, {}).keys())}"
         )
-
     sig = inspect.signature(exporter)
-    valid_kwards = {k: v for k, v in kwards.items() if k in sig.parameters}
-    return exporter(varname, **valid_kwards)
+    valid_kwargs = {k: v for k, v in kwargs.items() if k in sig.parameters}
+    valid_kwargs.update({"units": units})
+    return exporter(varname, temp, **valid_kwargs)
 
 
-def k600(k600_method: str = "MA2010-NB", **kwards):
+def k600(k600_method: str = "MA2010-NB", **kwargs):
     """Calculates gas transfer coefficient k600
 
     Return
@@ -96,17 +101,18 @@ def k600(k600_method: str = "MA2010-NB", **kwards):
         )
 
     sig = inspect.signature(exporter)
-    valid_kwards = {k: v for k, v in kwards.items() if k in sig.parameters}
-    return exporter(**valid_kwards) * 24 / 100
+    valid_kwargs = {k: v for k, v in kwargs.items() if k in sig.parameters}
+    return exporter(**valid_kwargs) * 24 / 100
 
 
+@warn_default_units
 def k600_to_kgas(
     varname: str,
     temp: np.ndarray | float,
-    k600: np.ndarray | float,
+    k: np.ndarray | float,
     u10: np.ndarray | float,
-    units: list[str],
-) -> np.ndarray | float:
+    units: dict[str, str] = {"temp": "degC", "k600": "m/s", "u10": "m/s"},
+) -> Numeric:
     """Calculates gas transfer coefficient kgas from k600
 
     Parameters:
@@ -122,15 +128,11 @@ def k600_to_kgas(
     """
     from pyghgaq.functions.k600_functions import kgas_k600
 
-    if len(units) < 3:
-        raise ValueError("Missing units")
-
-    itemp = temp * ureg(units[0])
-    ik600 = k600 * ureg(units[1])
-    iu10 = u10 * ureg(units[2])
-    return kgas_k600(varname, itemp, ik600, iu10, 1)
+    units["k"] = units.pop("k600")
+    return kgas_k600(varname, temp, k, u10, units, 1)
 
 
+@warn_default_units
 def kgas_to_k600(
     varname: str,
     kgas: np.ndarray | float,
