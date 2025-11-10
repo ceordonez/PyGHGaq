@@ -1,6 +1,12 @@
-from typing import TypeAlias
+from __future__ import annotations
 
-import numpy as np
+from typing import TypeAlias, TYPE_CHECKING
+
 from pint import Quantity
+from pint.facets.plain import PlainQuantity
+from numpy.typing import NDArray
 
-Numeric: TypeAlias = float | np.ndarray | Quantity | int
+if TYPE_CHECKING:
+    pass
+
+Numeric: TypeAlias = float | NDArray | int | Quantity | PlainQuantity

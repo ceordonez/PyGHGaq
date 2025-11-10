@@ -66,9 +66,10 @@ def enforce_units(**expected_units):
                 if name in bound.arguments and isinstance(
                     bound.arguments[name], Numeric
                 ):
-                    bound.arguments[name] = Q_(
-                        bound.arguments[name], bound.arguments["units"][name]
-                    )
+                    if name in bound.arguments["units"]:
+                        bound.arguments[name] = Q_(
+                            bound.arguments[name], bound.arguments["units"][name]
+                        )
                     bound.arguments[name] = to_si(bound.arguments[name], exp_unit)
             return func(*bound.args, **bound.kwargs)
 

@@ -3,29 +3,43 @@ import inspect
 import pkgutil
 
 import numpy as np
+from pint import Quantity
 
 from pyghgaq.functions.type_utils import Numeric
-from pyghgaq.registry.registry import warn_default_units
+from pyghgaq.functions.units import DEFAULT_INPUT_UNITS
+from pyghgaq.registry.registry import enforce_units, warn_default_units
 
 
+@enforce_units(
+    atmpress=DEFAULT_INPUT_UNITS["Atm_Pressure"],
+    catm=DEFAULT_INPUT_UNITS["Gas_Concentration"],
+    hcp=DEFAULT_INPUT_UNITS["HenryCoeff"],
+)
 def csat(
-    atmpress_hpa: np.ndarray | float,
-    catm_ppm: np.ndarray | float,
-    hcp_molm3pa: np.ndarray | float,
-) -> np.ndarray | float:
+    atmpress: Numeric,
+    catm: Numeric,
+    hcp: Numeric,
+    units: dict[str, str] = {},
+) -> Quantity:
     """
     Return
     -------
     Concentration of saturation in mmolm3
     """
-    return atmpress_hpa * catm_ppm * hcp_molm3pa * 1e-1
+    return atmpress.to("Pa") * catm.to_base_units() * hcp.to("mmol m^-3 Pa^-1")
 
 
+@enforce_units(
+    flux=DEFAULT_INPUT_UNITS["Diff_Flux"],
+    cw=DEFAULT_INPUT_UNITS["Diss_Gas_Concentration"],
+    csat=DEFAULT_INPUT_UNITS["Diss_Gas_Concentration"],
+)
 def kgas(
-    flux: np.ndarray | float,
-    cw: np.ndarray | float,
-    csat: np.ndarray | float,
-) -> np.ndarray | float:
+    flux: Numeric,
+    cw: Numeric,
+    csat: Numeric,
+    units: dict[str, str] = {},
+) -> Quantity:
     """
     Return
     ------
@@ -35,11 +49,17 @@ def kgas(
     return flux / (cw - csat)
 
 
+@enforce_units(
+    csat=DEFAULT_INPUT_UNITS["Diss_Gas_Concentration"],
+    cw=DEFAULT_INPUT_UNITS["Diss_Gas_Concentration"],
+    kgas=DEFAULT_INPUT_UNITS["kgas"],
+)
 def atm_diff_flux(
-    csat: np.ndarray | float,
-    cw: np.ndarray | float,
-    kgas: np.ndarray | float,
-) -> np.ndarray | float:
+    csat: Numeric,
+    cw: Numeric,
+    kgas: Numeric,
+    units: dict[str, str] = {},
+) -> Quantity:
     """
     Returns
     -------
@@ -49,13 +69,18 @@ def atm_diff_flux(
 
 
 @warn_default_units
+@enforce_units(
+    temp=DEFAULT_INPUT_UNITS["Temperature"],
+    salt=DEFAULT_INPUT_UNITS["Salinity"],
+    catm=DEFAULT_INPUT_UNITS["Gas_Concentration"],
+)
 def henry_coefficient(
     varname: str,
-    temp: np.ndarray | float,
+    temp: Numeric,
     method: str = "Sanders",
-    units: dict[str, str] = {"temp": "degC", "salt": "PSU", "catm": "ppm"},
+    units: dict[str, str] = {},
     **kwargs,
-) -> Numeric:
+) -> Quantity:
 
     from pyghgaq import gases
     from pyghgaq.registry.registry import exportershcp
@@ -82,7 +107,13 @@ def henry_coefficient(
     return exporter(varname, temp, **valid_kwargs)
 
 
-def k600(k600_method: str = "MA2010-NB", **kwargs):
+@enforce_units(
+    u10=DEFAULT_INPUT_UNITS["WindSpeed"],
+    area=DEFAULT_INPUT_UNITS["Area"],
+)
+def k600(
+    u10: Numeric, k600_method: str = "MA2010-NB", units: dict[str, str] = {}, **kwargs
+) -> Quantity:
     """Calculates gas transfer coefficient k600
 
     Return
@@ -102,17 +133,22 @@ def k600(k600_method: str = "MA2010-NB", **kwargs):
 
     sig = inspect.signature(exporter)
     valid_kwargs = {k: v for k, v in kwargs.items() if k in sig.parameters}
-    return exporter(**valid_kwargs) * 24 / 100
+    return exporter(u10, **valid_kwargs).to("m/d")
 
 
+@enforce_units(
+    temp=DEFAULT_INPUT_UNITS["Temperature"],
+    k=DEFAULT_INPUT_UNITS["k"],
+    u10=DEFAULT_INPUT_UNITS["WindSpeed"],
+)
 @warn_default_units
 def k600_to_kgas(
     varname: str,
-    temp: np.ndarray | float,
-    k: np.ndarray | float,
-    u10: np.ndarray | float,
-    units: dict[str, str] = {"temp": "degC", "k600": "m/s", "u10": "m/s"},
-) -> Numeric:
+    temp: Numeric,
+    k: Numeric,
+    u10: Numeric,
+    units: dict[str, str],
+) -> Quantity:
     """Calculates gas transfer coefficient kgas from k600
 
     Parameters:
@@ -128,17 +164,22 @@ def k600_to_kgas(
     """
     from pyghgaq.functions.k600_functions import kgas_k600
 
-    units["k"] = units.pop("k600")
     return kgas_k600(varname, temp, k, u10, units, 1)
 
 
 @warn_default_units
+@enforce_units(
+    temp=DEFAULT_INPUT_UNITS["Temperature"],
+    k=DEFAULT_INPUT_UNITS["k"],
+    u10=DEFAULT_INPUT_UNITS["WindSpeed"],
+)
 def kgas_to_k600(
     varname: str,
-    kgas: np.ndarray | float,
-    temp_c: np.ndarray | float,
-    u10_ms: np.ndarray | float,
-) -> np.ndarray | float:
+    kgas: Numeric,
+    temp_c: Numeric,
+    u10_ms: Numeric,
+    units: dict[str, str] = {},
+) -> Quantity:
     """Calculates normalized gas transfer coefficient k600 from kgas
 
     Parameters:
@@ -154,11 +195,12 @@ def kgas_to_k600(
     """
     from pyghgaq.functions.k600_functions import kgas_k600
 
-    return kgas_k600(varname, temp_c, kgas, u10_ms, -1)
+    return kgas_k600(varname, temp_c, kgas, u10_ms, units, -1)
 
 
-def schmidt_number(varname: str, temp_c: np.ndarray | float):
-    from pyghgaq.functions.functions import schmidt_number
+@enforce_units(temp=DEFAULT_INPUT_UNITS["Temperature"])
+def schmidt_number(varname: str, temp: Numeric) -> float | np.ndarray:
+    from pyghgaq.registry.registry import exporterssh
 
     """Calculates Schmidt number for gases
 
@@ -172,7 +214,7 @@ def schmidt_number(varname: str, temp_c: np.ndarray | float):
     Schmidt number
     """
 
-    return schmidt_number(varname, temp_c)
+    return exporterssh(varname, temp)
 
 
 if __name__ == "__main__":
@@ -185,6 +227,4 @@ if __name__ == "__main__":
     # hcpch4_b = henry_coefficient(
     #     "CH4", "Weisenburg", temp_c=temp, catm_ppm=2, salt_psu=0
     # )
-    k600_ms = k600("VP2013", u10_ms=1, area_km2=1)
-    kgas_ms = k600_to_kgas("CO2", temp, k600_ms, u, ["m/s", "degC", "m/s"])
     # co2flux = atm_diff_flux(cgas, cw, kgas_ms)

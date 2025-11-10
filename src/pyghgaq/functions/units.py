@@ -1,14 +1,29 @@
-import inspect
-
 from pint import Quantity, UnitRegistry
 
 ureg = UnitRegistry(autoconvert_offset_to_baseunit=True)
-Q_ = ureg.Quantity
+Q_ = ureg.Quantity # type: ignore[assignment]
+
+__all__= ["ureg", "Q_", "Quantity"]
 
 ## HERE YOU CAN DEFINE MORE UNITS
 ureg.formatter.default_format = "~P"
 ureg.define("PSU = 1e-3")
 ureg.define("ppb = 1e-9")
+
+DEFAULT_INPUT_UNITS = {
+    "WindSpeed": "m/s",
+    "Temperature": "degC",
+    "Diss_Gas_Concentration": "mmol m^-3",
+    "Gas_Concentration": "ppm",
+    "k600": "m/d",
+    "kgas": "m/d",
+    "k": "m/d",
+    "Atm_Pressure": "hPa",
+    "Salinity": "PSU",
+    "Diff_Flux": "mmol m^-2 d^-1",
+    "HenryCoeff": "mol m^-3 Pa^-1",
+    "Area": "km^2",
+}
 
 
 def to_si(value, expected_unit):

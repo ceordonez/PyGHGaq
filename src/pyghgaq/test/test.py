@@ -13,19 +13,21 @@ if __name__ == "__main__":
     cw = np.arange(1, 10, 0.5)
     cgas = np.arange(1, 10, 0.5)
 
-    # hcpch4_a = henry_coefficient("CH4", temp)
-    # hcpch4_a = henry_coefficient("CH4", temp, units={'temp':'degC'})
+    hcpch4_a = henry_coefficient("CH4", temp)
     hcpch4_b = henry_coefficient("CH4", temp, method='Weisenburg', salt=34, catm=1.41, units={"catm": "ppm"})
-    print(hcpch4_b)
-    __import__('pdb').set_trace()
+    sat = csat(800, 2, 3E-5)
+    fgas = kgas(1, 1, 0)
+    atmf = atm_diff_flux(0, 1, 2)
+    fk600 = k600(u, 'CC1998')
 
-    # hcpco2_a = henry_coefficient("CO2", temp)
+
+    print(hcpch4_a, hcpch4_b)
+    hcpco2_a = henry_coefficient("CO2", temp)
+    hcpco2_b = henry_coefficient("CO2", temp, 'Weisenburg', salt=1, catm=1)
+    print(hcpco2_a, hcpco2_b)
+    __import__('pdb').set_trace()
     # hcp_sal_ch4("CH4", 25, 0, 2, catm_units='ppb')
-    # hcpco2_b = henry_coefficient("CO2", temp, 'Weisenburg', salt=1, catm=1)
     # __import__("pdb").set_trace()
-    # hcpch4_b = henry_coefficient(
-    #     "CH4", "Weisenburg", temp_c=temp, catm_ppm=2, salt_psu=0
-    # )
     # k600_ms = k600("VP2013", u10_ms=1, area_km2=1)
     # k600_ms = 10
     #

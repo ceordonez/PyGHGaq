@@ -62,8 +62,8 @@ def hcp_sanders(
 
 
 @register_schmidt("CH4")
-@enforce_units(temp="degC")
-def schmit_number(temp: Numeric) -> np.ndarray | float:
+@enforce_units(temp="K")
+def sch_number(temp: Numeric) -> np.ndarray | float:
     constant = read_constant()
     const = constant["CH4"]["SCH"][::-1]
     if isinstance(temp, Quantity):
