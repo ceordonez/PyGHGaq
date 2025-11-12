@@ -1,35 +1,35 @@
 import numpy as np
-from pint import Quantity
+from pint.facets.plain import PlainQuantity
 
 from pyghgaq.functions.read import read_constant
-from pyghgaq.functions.type_utils import Numeric
-from pyghgaq.functions.units import Q_
+from pyghgaq.functions.units import Q_, get_default_units
 from pyghgaq.registry.registry import enforce_units, register_hcp, register_schmidt
 
 
-@register_hcp("CH4", "Weisenburg")
-@enforce_units(temp="K", salt="PSU", catm="ppm")
+@register_hcp("CH4", "Wiesenburg")
+@enforce_units(
+    unit_getter=get_default_units,
+    unit_map={"temp": "Temperature", "salt": "Salinity", "catm": "Gas_Concentration"},
+)
 def hcp_sal_ch4(
     varname: str,
-    temp: Numeric,
-    salt: Numeric,
-    catm: Numeric,
+    temp: PlainQuantity,
+    salt: PlainQuantity,
+    catm: PlainQuantity,
     units: dict[str, str],
-) -> Numeric:
+) -> PlainQuantity:
+
+    salt = salt.to("PSU")
+    temp = temp.to("K")
+    catm = catm.to("ppm")
 
     constant = read_constant()
     A = constant[varname]["A"]
     B = constant[varname]["B"]
 
-    if isinstance(salt, Quantity):
-        salt = salt.magnitude
-
-    if isinstance(catm, Quantity):
-        fx = catm.to_base_units().magnitude
-    else:
-        fx = catm * 1e-6
-    if isinstance(temp, Quantity):
-        temp = temp.magnitude
+    salt = salt.magnitude
+    fx = catm.to_base_units().magnitude
+    temp = temp.magnitude
 
     c_molm3 = Q_(
         np.exp(
@@ -47,13 +47,13 @@ def hcp_sal_ch4(
 
 
 @register_hcp("CH4", "Sanders")
-@enforce_units(temp="K")
 def hcp_sanders(
     varname: str,
-    temp: np.ndarray | Quantity | float,
+    temp: PlainQuantity,
     units: dict[str, str],
-) -> np.ndarray | Quantity | float:
+) -> PlainQuantity:
 
+    temp = temp.to("K")
     constant = read_constant()
     hcp25 = Q_(constant[varname]["H_T25"], "mol m^-3 Pa^-1")
     dlnHcpd1_T = Q_(constant[varname]["dlnHdT"], "K")
@@ -62,11 +62,13 @@ def hcp_sanders(
 
 
 @register_schmidt("CH4")
-@enforce_units(temp="K")
-def sch_number(temp: Numeric) -> np.ndarray | float:
+def sch_number(temp: PlainQuantity) -> np.ndarray | float:
     constant = read_constant()
     const = constant["CH4"]["SCH"][::-1]
-    if isinstance(temp, Quantity):
-        return np.polyval(const, temp.magnitude)
-    else:
-        return np.polyval(const, temp)
+    return np.polyval(const, temp.magnitude)
+
+@register_schmidt("CH4-salt")
+def sch_number(temp: PlainQuantity) -> np.ndarray | float:
+    constant = read_constant()
+    const = constant["CH4"]["SCH-salt"][::-1]
+    return np.polyval(const, temp.magnitude)

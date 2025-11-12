@@ -12,6 +12,7 @@ CH4:
   B: [-0.05916, 0.032174, -0.0048198]
   # For Schmidt number from Wannikhof 1992
   SCH: [1897.8, -114.28, 3.2902, -0.039061]
+  SCH-salt: [2039.2, -120.31, 3.4209, -0.040437]
 CO2:
   # For Henry's coefficient from Sanders 2023
   H_T25: 3.3E-4 #[molm-3Pa-1] Henry coeficient for CO2 
@@ -21,3 +22,4 @@ CO2:
   B: [0.027766, -0.025888, 0.0050578]
   # For Schmidt number from Wannikhof 1992
   SCH: [1911.1, -118.11, 3.4527, -0.041320]
+  SCH-salt: [2073.1, -125.62, 3.6276, -0.043219]

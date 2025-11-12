@@ -25,6 +25,9 @@ DEFAULT_INPUT_UNITS = {
     "Area": "km^2",
 }
 
+def get_default_units():
+    """Returns the CURRENT, editable default units dictionary."""
+    return DEFAULT_INPUT_UNITS
 
 def to_si(value, expected_unit):
     """

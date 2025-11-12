@@ -1,14 +1,14 @@
 import numpy as np
-from pint import Quantity
+from pint.facets.plain import PlainQuantity
 
-from pyghgaq.functions.type_utils import Numeric
 from pyghgaq.functions.units import Q_
-from pyghgaq.registry.registry import enforce_units, register_k600
+from pyghgaq.registry.registry import register_k600
 
 
 @register_k600("VP2013")
-@enforce_units(u10="m/s", area="km^2")
-def k600_VP2013(u10: Numeric, area: Numeric, units: dict[str, str] = {}) -> Numeric:
+def k600_VP2013(
+    u10: PlainQuantity, area: PlainQuantity, units: dict[str, str] = {}
+) -> PlainQuantity:
     """Calculates gas transfer coefficient k600 from Vachon and Prairie 2013
 
     Parameters
@@ -20,18 +20,14 @@ def k600_VP2013(u10: Numeric, area: Numeric, units: dict[str, str] = {}) -> Nume
     ------
     k600 : velocity transfer coefficient (cmh-1)
     """
-    if isinstance(u10, Quantity):
-        u10 = u10.magnitude
-    if isinstance(area, Quantity):
-        area = area.magnitude
-
-    k600 = 2.51 + 1.48 * u10 + 0.39 * u10 * np.log10(area)
+    u10 = u10.to("m/s")
+    area = area.to("km^2")
+    k600 = 2.51 + 1.48 * u10.magnitude + 0.39 * u10.magnitude * np.log10(area.magnitude)
     return Q_(k600, "cm h^-1")
 
 
 @register_k600("MA2010-NB")
-@enforce_units(u10="m/s")
-def k600_MA2010_NB(u10: Numeric, units: dict[str, str] = {}) -> Numeric:
+def k600_MA2010_NB(u10: PlainQuantity, units: dict[str, str] = {}) -> PlainQuantity:
     """Calculates gas transfer coefficient from McIntyre et al. 2010 negative bouyancy
 
     Parameters
@@ -42,13 +38,12 @@ def k600_MA2010_NB(u10: Numeric, units: dict[str, str] = {}) -> Numeric:
     ------
     k600 : velocity transfer coefficient (cmh-1)
     """
-    value = Q_(2 + 2.04 * u10.magnitude, "cm h^-1")
-    return value
+    u10 = u10.to("m/s")
+    return Q_(2 + 2.04 * u10.magnitude, "cm h^-1")
 
 
 @register_k600("MA2010-PB")
-@enforce_units(u10="m/s")
-def k600_MA2010_PB(u10: Numeric, units: dict[str, str] = {}) -> Numeric:
+def k600_MA2010_PB(u10: PlainQuantity, units: dict[str, str] = {}) -> PlainQuantity:
     """Calculates gas transfer coefficient from McIntyre et al. 2010 positive bouyancy
 
     Parameters
@@ -59,13 +54,12 @@ def k600_MA2010_PB(u10: Numeric, units: dict[str, str] = {}) -> Numeric:
     ------
     k600 : velocity transfer coefficient (cmh-1)
     """
-    value = Q_(1.74 * u10.magnitude - 0.15, "cm h^-1")
-    return value
+    u10 = u10.to("m/s")
+    return Q_(1.74 * u10.magnitude - 0.15, "cm h^-1")
 
 
 @register_k600("MA2010-MB")
-@enforce_units(u10="m/s")
-def k600_MA2010_MB(u10: Numeric, units: dict[str, str] = {}) -> Numeric:
+def k600_MA2010_MB(u10: PlainQuantity, units: dict[str, str] = {}) -> PlainQuantity:
     """Calculates gas transfer coefficient from McIntyre et al. 2010 mixed model
 
     Parameters
@@ -76,13 +70,12 @@ def k600_MA2010_MB(u10: Numeric, units: dict[str, str] = {}) -> Numeric:
     ------
     k600 : velocity transfer coefficient (cmh-1)
     """
-    value = Q_(2.25 * u10.magnitude + 0.16, "cm h^-1")
-    return value
+    u10 = u10.to("m/s")
+    return Q_(2.25 * u10.magnitude + 0.16, "cm h^-1")
 
 
 @register_k600("CC1998")
-@enforce_units(u10="m/s")
-def k600_CC1998(u10: Numeric, units: dict[str, str] = {}) -> Numeric:
+def k600_CC1998(u10: PlainQuantity, units: dict[str, str] = {}) -> PlainQuantity:
     """Calculates gas transfer coefficient from Cole and Caraco 1998.
 
     Parameters
@@ -93,18 +86,19 @@ def k600_CC1998(u10: Numeric, units: dict[str, str] = {}) -> Numeric:
     ------
     k600 : velocity transfer coefficient (cmh-1)
     """
+
+    u10 = u10.to("m/s")
     return Q_(2.07 + 0.215 * u10.magnitude**1.7, "cm h^-1")
 
 
-@enforce_units(temp="degC", k="m/d", u10="m/s")
 def kgas_k600(
     varname: str,
-    temp: Numeric,
-    k: Numeric,
-    u10: Numeric,
+    temp: PlainQuantity,
+    k: PlainQuantity,
+    u10: PlainQuantity,
     units: dict[str, str] = {},
     a: int = 1,
-) -> Quantity:
+) -> PlainQuantity:
     """Calculates gas transfer coefficient kgas from k600 or vicecersa
 
     Parameters:
@@ -124,14 +118,11 @@ def kgas_k600(
 
     from pyghgaq.functions.functions import schmidt_number
 
+    u10 = u10.to("m/s")
+    temp = temp.to("degC")
+    k = k.to("m/d")
     # Prairie and del Giorgo 2013
-    if isinstance(u10, Quantity):
-        n = np.ones(len(u10.magnitude)) * 1 / 2
-        n = np.where(u10.magnitude > 3.7, n, 2 / 3.0)
-    else:
-        n = 2 / 3.0
-        if u10 < 3.7:
-            n = 1 / 2.0
-
+    n = np.ones(len(u10.magnitude)) * 1 / 2
+    n = np.where(u10.magnitude > 3.7, n, 2 / 3.0)
     sch = schmidt_number(varname, temp)
     return k * (600 / sch) ** (n * a)

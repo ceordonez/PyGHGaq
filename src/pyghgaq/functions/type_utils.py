@@ -4,9 +4,9 @@ from typing import TypeAlias, TYPE_CHECKING
 
 from pint import Quantity
 from pint.facets.plain import PlainQuantity
-from numpy.typing import NDArray
+import numpy as np
 
 if TYPE_CHECKING:
     pass
 
-Numeric: TypeAlias = float | NDArray | int | Quantity | PlainQuantity
+Numeric: TypeAlias = float | np.ndarray | int | Quantity | PlainQuantity
