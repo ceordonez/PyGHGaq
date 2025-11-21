@@ -28,7 +28,8 @@ if __name__ == "__main__":
     #
     # sat = csat(800, 2, 3e-5)
     # fgas = kWindSpeedgas(1, 1, 0)
-    atmf = atm_diff_flux(0, 1, 2, units={'kgas':'m/s'})
+    kgas = kgas(1, 1, 0.1)
+    atmf = atm_diff_flux(0, 1, 2, units={"kgas": "m/s"})
     atmfa = atm_diff_flux(0, 1, 2)
     total = atmf.to(atmfa.units) + atmfa
     # fk600b = k600(u, "CC1998", units={"u10": "m/s"})

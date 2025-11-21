@@ -52,14 +52,9 @@ def kgas(
     kgas from flux and concentrations measurements.
     """
 
-    return flux.to("mmol/m3/d") / (cw.to("mmol/m3") - csat.to("mmol/m3"))
+    return flux.to("mmol/m^2/d") / (cw.to("mmol/m^3") - csat.to("mmol/m^3"))
 
 
-# @enforce_units(
-#     csat=DEFAULT_INPUT_UNITS["Diss_Gas_Concentration"],
-#     cw=DEFAULT_INPUT_UNITS["Diss_Gas_Concentration"],
-#     kgas=DEFAULT_INPUT_UNITS["kgas"],
-# )
 @enforce_units(
     unit_getter=get_default_units,
     unit_map={"csat": "Diss_Gas_Concentration", "cw": "Diss_Gas_Concentration"},
@@ -141,12 +136,6 @@ def k600(
     return exporter(u10, **valid_kwargs).to("m/d")
 
 
-# @enforce_units(
-#     temp=DEFAULT_INPUT_UNITS["Temperature"],
-#     k=DEFAULT_INPUT_UNITS["k"],
-#     u10=DEFAULT_INPUT_UNITS["WindSpeed"],
-# )
-# @warn_default_units
 @enforce_units(
     unit_getter=get_default_units, unit_map={"temp": "Temperature", "u10": "WindSpeed"}
 )
@@ -175,12 +164,6 @@ def k600_to_kgas(
     return kgas_k600(varname, temp, k, u10, units, 1)
 
 
-# @warn_default_units
-# @enforce_units(
-#     temp=DEFAULT_INPUT_UNITS["Temperature"],
-#     k=DEFAULT_INPUT_UNITS["k"],
-#     u10=DEFAULT_INPUT_UNITS["WindSpeed"],
-# )
 @enforce_units(
     unit_getter=get_default_units, unit_map={"u10": "WindSpeed", "temp": "Temperature"}
 )
@@ -209,7 +192,6 @@ def kgas_to_k600(
     return kgas_k600(varname, temp, kgas, u10, units, -1)
 
 
-# @enforce_units(temp=DEFAULT_INPUT_UNITS["Temperature"])
 @enforce_units(unit_getter=get_default_units, unit_map={"temp": "Temperature"})
 def schmidt_number(varname: str, temp: Numeric) -> float | np.ndarray:
     from pyghgaq.registry.registry import exporterssh
