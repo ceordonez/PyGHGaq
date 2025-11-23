@@ -8,8 +8,8 @@ if __name__ == "__main__":
 
     from pyghgaq.functions.units import DEFAULT_INPUT_UNITS
 
-    DEFAULT_INPUT_UNITS["WindSpeed"] = "km/s"
-    DEFAULT_INPUT_UNITS["kgas"] = "km/d"
+    DEFAULT_INPUT_UNITS["WindSpeed"] = "m/s"
+    DEFAULT_INPUT_UNITS["kgas"] = "m/d"
 
     print(DEFAULT_INPUT_UNITS)
     temp = np.arange(20, 25, 0.5)
@@ -32,11 +32,15 @@ if __name__ == "__main__":
     atmf = atm_diff_flux(0, 1, 2, units={"kgas": "m/s"})
     atmfa = atm_diff_flux(0, 1, 2)
     total = atmf.to(atmfa.units) + atmfa
+    k600 = kgas_to_k600('CH4', kgas, temp, u)
+    csat = csat('CH4', 1013.25, 2, 25)
+    u10 = uz_to_u10(u, 2)
     # fk600b = k600(u, "CC1998", units={"u10": "m/s"})
     # fk600 = k600(u, "CC1998")
-    print(atmf)
+    print(u10)
+    print(k600)
     print(atmfa)
-
+    print(csat)
     # print(hcpch4_a, hcpch4_b)
     # print(hcpco2_a, hcpco2_b)
 

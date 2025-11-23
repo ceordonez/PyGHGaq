@@ -5,9 +5,22 @@ import pkgutil
 import numpy as np
 from pint.facets.plain import PlainQuantity
 
+from pyghgaq.functions.read import read_constant
 from pyghgaq.functions.type_utils import Numeric
-from pyghgaq.functions.units import get_default_units
+from pyghgaq.functions.units import Q_, get_default_units
 from pyghgaq.registry.registry import enforce_units
+
+
+@enforce_units(
+    unit_getter=get_default_units,
+    unit_map={"windspeed": "WindSpeed", "height": "height"},
+)
+def uz_to_u10(windspeed, height):
+    constant = read_constant()
+    cd = constant["Cd"]  ## THIS COULD BE IMPROVED
+    k = constant["K"]
+    u10 = windspeed.to("m/s") * (1 + cd**0.5 / k * np.log(Q_(10, "m") / height))
+    return u10
 
 
 @enforce_units(
@@ -15,20 +28,24 @@ from pyghgaq.registry.registry import enforce_units
     unit_map={
         "atmpress": "Atm_Pressure",
         "catm": "Gas_Concentration",
-        "hcp": "HenryCoeff",
+        "temp": "Temperature",
     },
 )
 def csat(
+    var: str,
     atmpress: Numeric,
     catm: Numeric,
-    hcp: Numeric,
+    temp: Numeric,
+    method: "str" = "Sanders",
     units: dict[str, str] = {},
+    **kwargs,
 ) -> PlainQuantity:
     """
     Return
     -------
     Concentration of saturation in mmolm3
     """
+    hcp = henry_coefficient(var, temp, method, units, **kwargs)
     return atmpress.to("Pa") * catm.to_base_units() * hcp.to("mmol m^-3 Pa^-1")
 
 

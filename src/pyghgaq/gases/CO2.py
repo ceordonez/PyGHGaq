@@ -59,7 +59,7 @@ def sch_number(temp: PlainQuantity) -> float | np.ndarray:
     return np.polyval(const, temp.magnitude)
 
 @register_schmidt("CO2-salt")
-def sch_number(temp: PlainQuantity) -> float | np.ndarray:
+def sch_number_salt(temp: PlainQuantity) -> float | np.ndarray:
     constant = read_constant()
     const = constant["CO2"]["SCH-salt"][::-1]
     return np.polyval(const, temp.magnitude)
