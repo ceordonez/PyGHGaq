@@ -122,7 +122,10 @@ def kgas_k600(
     temp = temp.to("degC")
     k = k.to("m/d")
     # Prairie and del Giorgo 2013
-    n = np.ones(len(u10.magnitude)) * 1 / 2
-    n = np.where(u10.magnitude > 3.7, n, 2 / 3.0)
+    if isinstance(u10.magnitude, float) or isinstance(u10.magnitude, int):
+        n = 1 / 2 if u10.magnitude > 3.7 else 2 / 3
+    else:
+        n = np.ones(len(u10.magnitude)) * 1 / 2
+        n = np.where(u10.magnitude > 3.7, n, 2 / 3.0)
     sch = schmidt_number(varname, temp)
     return k * (600 / sch) ** (n * a)

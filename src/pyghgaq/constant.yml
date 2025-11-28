@@ -1,8 +1,8 @@
 ## GENERAL
 R: 8.314 #[m3PaK-1mol-1]
 RVDPD: 0.0111802 #Picarro manual Page 102
-Cd: 0.0013 # Stauffer 1980
-K: 0.41 # von Karman
+Cd: 0.0013 # Large and Pond 1981 
+k: 0.41 # von Karman
 
 ## GASES
 GASES: ['CH4', 'CO2']

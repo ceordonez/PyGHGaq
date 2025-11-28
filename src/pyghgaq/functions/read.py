@@ -1,6 +1,5 @@
-import yaml
-
 from importlib import resources
+
 import yaml  # requires pyyaml installed
 
 

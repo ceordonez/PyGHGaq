@@ -17,7 +17,12 @@ classifiers = [
 ]
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
-dependencies = ["numpy", "PyYaml", "pandas", "Pint"]
+dependencies = [
+    "numpy",
+    "pyyaml",
+    "pandas",
+    "Pint",
+]
 
 [project.urls]
 Homepage = "https://github.com/ceordonez/PyGHGaq"
@@ -28,3 +33,8 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 pyghgaq = ["*.yml"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.1",
+]

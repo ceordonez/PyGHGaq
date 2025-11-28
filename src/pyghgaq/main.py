@@ -15,10 +15,12 @@ from pyghgaq.registry.registry import enforce_units
     unit_getter=get_default_units,
     unit_map={"windspeed": "WindSpeed", "height": "height"},
 )
-def uz_to_u10(windspeed, height):
+def uz_to_u10(
+    windspeed: Numeric, height: float | int, units: dict[str, str] = {}
+) -> PlainQuantity:
     constant = read_constant()
-    cd = constant["Cd"]  ## THIS COULD BE IMPROVED
-    k = constant["K"]
+    cd = constant["Cd"]
+    k = constant["k"]
     u10 = windspeed.to("m/s") * (1 + cd**0.5 / k * np.log(Q_(10, "m") / height))
     return u10
 

@@ -35,5 +35,19 @@ kgas_ms = pyghgaq.k600_to_kx("CO2", temp, k600_ms, u)
 co2flux = pyghgaq.atm_diff_flux(cgas, cw, kgas_ms)
 ```
 
+### Units
+
+Units are managed using `Pint`. They can be changed by default for all the package as
+```python
+    from pyghgaq.functions.units import DEFAULT_INPUT_UNITS
+
+    DEFAULT_INPUT_UNITS["WindSpeed"] = "m/s"
+    DEFAULT_INPUT_UNITS["kgas"] = "m/d"
+```
+or by function as:
+```python
+    atmf = pyg.atm_diff_flux(0, 1, 2, units={"kgas": "m/s"})
+```
+
 ## IMPORTANT
 This package is still under delvelopment
