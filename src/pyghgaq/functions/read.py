@@ -15,6 +15,6 @@ def read_constant(filename: str = "constant.yml") -> dict:
     conf_file :
         Constant data.
     """
-    with resources.files("pyghgaq").joinpath(filename).open("r") as f:
+    with resources.files("pyghgaq.data").joinpath(filename).open("r") as f:
         constant = yaml.safe_load(f)
     return constant
