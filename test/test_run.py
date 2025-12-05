@@ -1,6 +1,6 @@
 import numpy as np
 
-import pyghgaq.main as pyg
+import pyghgaq as pyg
 from pyghgaq.functions.units import DEFAULT_INPUT_UNITS
 
 print(DEFAULT_INPUT_UNITS)
