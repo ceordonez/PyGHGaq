@@ -59,7 +59,7 @@ def test_vapour_mass_balance_zero_when_no_gas_added(gas, c_air, rh_air):
 
     temp_eq, temp_air, press, salt = 10.0, 5.0, 1005.0, 32.0
     v_hs, v_w = 35e-6, 105e-6
-    r = 8.314
+    r = 8.314462618
     hcp = _vapour_free_henry(gas, Q_(temp_eq, "degC"), "Wiesenburg", {},
                              {"salt": salt, "catm": c_air}).to("mol m^-3 Pa^-1").magnitude
     p_hs = (press - pyg.vapour_pressure(temp_eq, salt).magnitude) * 100

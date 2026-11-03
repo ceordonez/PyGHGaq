@@ -3,13 +3,22 @@
 Reference values come from pyheadspace (commit 3bf8d73) run on its
 template/DataTemplate.xlsx with sal_psu = 0, so that its salinity
 correction does not apply. Volumes: headspace 35 mL, total 140 mL.
+
+pyheadspace uses R = 8.314 J mol-1 K-1, pyghgaq the exact 8.314462618: with
+R = 8.314 the results must match pyheadspace exactly (same method); with the
+exact R they differ by less than 1e-4 (relative).
 """
 
 import numpy as np
 import pytest
 
 import pyghgaq as pyg
+import pyghgaq.main
+from pyghgaq.functions.read import read_constant
 from pyghgaq.functions.units import Q_
+
+PYHEADSPACE_R = 8.314
+R_TOLERANCE = 1e-4  # relative difference from using the exact R instead of 8.314
 
 TEMP_EQ = np.array([27.6, 27.1, 27.1, 26.1, 26.1, 27.5])
 TEMP_AIR = np.array([28.0, 29.6, 29.6, 26.2, 26.2, 27.0])
@@ -53,24 +62,38 @@ REF = {
 }
 
 
+@pytest.fixture(params=["pyheadspace R", "exact R"])
+def gas_constant(request, monkeypatch):
+    """Tolerance for the comparison with pyheadspace, for each value of R."""
+    if request.param == "pyheadspace R":
+        constants = {**read_constant(), "R": PYHEADSPACE_R}
+        monkeypatch.setattr(pyghgaq.main, "read_constant", lambda *a, **k: constants)
+        return 1e-10
+    return R_TOLERANCE
+
+
 @pytest.mark.parametrize("gas", ["CH4", "CO2"])
-def test_headspace_concentration_matches_pyheadspace(gas):
+def test_headspace_concentration_matches_pyheadspace(gas, gas_constant):
     c_hs, c_air, _, _ = REF[gas]["inputs"]
     result = pyg.headspace_concentration(
         gas, c_hs, c_air, TEMP_EQ, TEMP_AIR, PRESS, VOL_HS, VOL_TOTAL
     )
     assert result.units == Q_(1, "mmol m^-3").units
-    np.testing.assert_allclose(result.magnitude, REF[gas]["c"], rtol=1e-10)
+    np.testing.assert_allclose(result.magnitude, REF[gas]["c"], rtol=gas_constant)
 
 
 @pytest.mark.parametrize("gas", ["CH4", "CO2"])
-def test_headspace_d13c_matches_pyheadspace(gas):
+def test_headspace_d13c_matches_pyheadspace(gas, gas_constant):
     c_hs, c_air, d_hs, d_air = REF[gas]["inputs"]
     result = pyg.headspace_d13c(
         gas, c_hs, c_air, d_hs, d_air, TEMP_EQ, TEMP_AIR, PRESS, VOL_HS, VOL_TOTAL
     )
     assert result.units == Q_(1, "permille").units
-    np.testing.assert_allclose(result.magnitude, REF[gas]["d13c"], rtol=1e-10)
+    np.testing.assert_allclose(result.magnitude, REF[gas]["d13c"], rtol=gas_constant)
+
+
+def test_gas_constant_is_exact():
+    assert read_constant()["R"] == 8.314462618
 
 
 def test_headspace_quantity_inputs_are_converted():
@@ -98,7 +121,7 @@ def test_headspace_mass_balance_zero_when_no_gas_added():
     c_air = 2.0
     hcp = pyg.henry_coefficient("CH4", 20).to("mol m^-3 Pa^-1").magnitude
     v_hs, v_w = 35e-6, 105e-6
-    rt = 8.314 * 293.15
+    rt = 8.314462618 * 293.15
     # n_air = n_hs + n_aq  ->  x_air V_hs / RT = x_hs (V_hs / RT + H V_w)
     c_hs = c_air * (v_hs / rt) / (v_hs / rt + hcp * v_w)
     result = pyg.headspace_concentration("CH4", c_hs, c_air, 20, 20, 1013.25, 35, 140)

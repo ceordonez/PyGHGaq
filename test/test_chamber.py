@@ -11,7 +11,7 @@ from pyghgaq.functions.units import Q_
 def test_chamber_flux_hand_calculation():
     # 1 ppm/s in 16.76 L over 0.126 m^2 at 30 degC and 1014 hPa
     slope, vol, area, temp, press = 1.0, 16.76, 0.126, 30.0, 1014.0
-    n_air = press * 100 * vol * 1e-3 / (8.314 * (temp + 273.15))  # mol
+    n_air = press * 100 * vol * 1e-3 / (8.314462618 * (temp + 273.15))  # mol
     expected = slope * 1e-6 * n_air / area * 86400 * 1e3  # mmol m^-2 d^-1
     flux = pyg.chamber_flux(slope, vol, area, temp, press)
     assert flux.units == Q_(1, "mmol m^-2 d^-1").units
