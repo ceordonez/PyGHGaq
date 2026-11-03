@@ -3,3 +3,4 @@ dist/*
 *.egg-info/*
 *.pyc
 src/pyghgaq.egg-info/*
+examples/output/

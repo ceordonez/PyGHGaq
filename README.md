@@ -76,6 +76,8 @@ d13co2 = pyg.headspace_d13c("CO2", 1506.7, 403.4, -14.0, -8.65, 26.1, 26.2, 1014
 
 `headspace_d13c` assumes no isotopic fractionation between the water and the headspace after shaking.
 
+To process many samples from a spreadsheet, see [`examples/headspace_from_excel.py`](examples/headspace_from_excel.py). It reads one sample per row from an Excel file (see [`examples/data/headspace_example.xlsx`](examples/data/headspace_example.xlsx)), calculates CH<sub>4</sub> and CO<sub>2</sub> concentrations and δ<sup>13</sup>C, and writes the results to a new Excel file. Column names, bottle volumes and the salinity column are set at the top of the script. It requires `openpyxl` (`pip install openpyxl`).
+
 ### Input types
 
 Inputs can be Python or NumPy scalars, NumPy arrays, lists, pandas Series or [Pint](https://pint.readthedocs.io) quantities. All functions return Pint quantities; use `.magnitude` to get the plain values and `.to("<unit>")` to convert them.
