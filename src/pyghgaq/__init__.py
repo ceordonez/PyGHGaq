@@ -1,6 +1,8 @@
 from .main import (
     atm_diff_flux,
     csat,
+    headspace_concentration,
+    headspace_d13c,
     henry_coefficient,
     k600,
     k600_to_kgas,
@@ -13,6 +15,8 @@ from .main import (
 __all__ = [
     "atm_diff_flux",
     "csat",
+    "headspace_concentration",
+    "headspace_d13c",
     "henry_coefficient",
     "k600",
     "kgas_to_k600",

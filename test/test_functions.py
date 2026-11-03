@@ -43,8 +43,11 @@ def setup_mock_registries(monkeypatch):
 
     gases_mod = types.ModuleType("pyghgaq.gases")
     setattr(gases_mod, "__path__", ["dummy_path"])  # So pkgutil.iter_modules works
-    sys.modules["pyghgaq.gases"] = gases_mod
-    sys.modules["pyghgaq.gases.CO2"] = types.ModuleType("pyghgaq.gases.CO2")
+    # monkeypatch restores the real modules after each test
+    monkeypatch.setitem(sys.modules, "pyghgaq.gases", gases_mod)
+    monkeypatch.setitem(
+        sys.modules, "pyghgaq.gases.CO2", types.ModuleType("pyghgaq.gases.CO2")
+    )
 
     import pkgutil
 

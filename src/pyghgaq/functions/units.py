@@ -23,7 +23,9 @@ DEFAULT_INPUT_UNITS = {
     "Diff_Flux": "mmol m^-2 d^-1",
     "HenryCoeff": "mol m^-3 Pa^-1",
     "Area": "km^2",
-    "height": "m"
+    "height": "m",
+    "Volume": "mL",
+    "Isotope_Signature": "permille",
 }
 
 def get_default_units():
