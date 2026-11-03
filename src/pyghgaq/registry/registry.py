@@ -123,7 +123,7 @@ def enforce_units(unit_getter: Callable, unit_map: dict[str, str] = {}):
                     if name in current_defaults:
                         effective_units[param_name] = current_defaults[name]
                     else:
-                        if name not in ['kwargs'] and not isinstance(bound.arguments[param_name], str):
+                        if name not in ['kwargs'] and not isinstance(bound.arguments[param_name], (str, bool)):
                             print(f'Units not found for: {param_name}')
 
 

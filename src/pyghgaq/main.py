@@ -39,18 +39,72 @@ def csat(
     catm: Numeric,
     temp: Numeric,
     method: "str" = "Sanders",
+    vapour: bool = False,
     units: dict[str, str] = {},
     **kwargs,
 ) -> PlainQuantity:
     """
+    Concentration in equilibrium with air of mole fraction catm.
+
+    With vapour=True, catm is a dry mole fraction and the air at the water
+    surface is saturated with water vapour, so the partial pressure is
+    catm (atmpress - pH2O(temp, salt)) (Weiss and Price 1980). The CH4
+    "Wiesenburg" coefficient already gives the equilibrium with moist air at
+    1 atm; without vapour it is used as is.
+
     Return
     -------
     Concentration of saturation in mmolm3
     """
     # catm is a named argument here, so forward it explicitly: methods such as
     # CH4 "Wiesenburg" require it (henry_coefficient drops it when unused).
-    hcp = henry_coefficient(var, temp, method, units, catm=catm, **kwargs)
-    return atmpress.to("Pa") * catm.to_base_units() * hcp.to("mmol m^-3 Pa^-1")
+    if vapour:
+        hcp = _vapour_free_henry(var, temp, method, units, {"catm": catm, **kwargs})
+        pressure = atmpress - vapour_pressure(temp, kwargs.get("salt", 0))
+    else:
+        hcp = henry_coefficient(var, temp, method, units, catm=catm, **kwargs)
+        pressure = atmpress
+    return pressure.to("Pa") * catm.to_base_units() * hcp.to("mmol m^-3 Pa^-1")
+
+
+@enforce_units(
+    unit_getter=get_default_units,
+    unit_map={"temp": "Temperature", "salt": "Salinity"},
+)
+def vapour_pressure(
+    temp: Numeric, salt: Numeric = 0, units: dict[str, str] = {}
+) -> PlainQuantity:
+    """Water vapour pressure at saturation over (sea)water, Weiss and Price 1980.
+
+    Parameters
+    ----------
+    temp : water temperature (default degC)
+    salt : salinity (default PSU), 0 for fresh water
+
+    Return
+    ------
+    Vapour pressure (hPa)
+    """
+    c = read_constant()["WP80"]
+    t = temp.to("K").magnitude / 100
+    s = salt.to("PSU").magnitude
+    return Q_(np.exp(c[0] + c[1] / t + c[2] * np.log(t) + c[3] * s), "atm").to("hPa")
+
+
+# Henry's coefficient methods that give the equilibrium with water-saturated
+# air at 1 atm rather than with the dry gas (Wiesenburg and Guinasso 1979)
+_MOIST_AIR_METHODS = {("CH4", "Wiesenburg")}
+
+
+def _vapour_free_henry(
+    varname: str, temp: PlainQuantity, method: str, units: dict[str, str], kwargs: dict
+) -> PlainQuantity:
+    """Henry's coefficient per unit partial pressure of the gas itself."""
+    hcp = henry_coefficient(varname, temp, method, units, **kwargs)
+    if (varname, method) in _MOIST_AIR_METHODS:
+        ph2o = vapour_pressure(temp, kwargs.get("salt", 0))
+        hcp = hcp / (1 - (ph2o / Q_(1, "atm")).to("dimensionless"))
+    return hcp
 
 
 @enforce_units(
@@ -242,6 +296,7 @@ _HEADSPACE_UNIT_MAP = {
     "atmpress": "Atm_Pressure",
     "vol_hs": "Volume",
     "vol_total": "Volume",
+    "rh_air": "Relative_Humidity",
 }
 
 
@@ -255,6 +310,8 @@ def _headspace_moles(
     vol_hs: PlainQuantity,
     vol_total: PlainQuantity,
     method: str,
+    vapour: bool,
+    rh_air: PlainQuantity,
     units: dict[str, str],
     kwargs: dict,
 ) -> tuple[PlainQuantity, PlainQuantity, PlainQuantity, PlainQuantity]:
@@ -272,15 +329,22 @@ def _headspace_moles(
         raise ValueError("vol_total must be larger than vol_hs")
 
     r_gas = Q_(read_constant()["R"], "J mol^-1 K^-1")
-    p_hs = c_hs.to("dimensionless") * atmpress.to("Pa")
-    p_air = c_air.to("dimensionless") * atmpress.to("Pa")
-    n_hs = (p_hs * vol_hs / (r_gas * temp_eq.to("K"))).to("mol")
-    n_air = (p_air * vol_hs / (r_gas * temp_air.to("K"))).to("mol")
-
     # catm only matters for methods that need it (CH4 "Wiesenburg"); the
     # resulting Henry's coefficient does not depend on its value.
     hcp_kwargs = {"catm": c_hs, **kwargs}
-    hcp = henry_coefficient(varname, temp_eq, method, units, **hcp_kwargs)
+    if vapour:
+        # Dry mole fractions: the headspace is saturated with water vapour at
+        # temp_eq after shaking; the air before shaking has rh_air at temp_air
+        p_dry_hs = atmpress - vapour_pressure(temp_eq, kwargs.get("salt", 0))
+        p_dry_air = atmpress - rh_air.to("dimensionless") * vapour_pressure(temp_air)
+        hcp = _vapour_free_henry(varname, temp_eq, method, units, hcp_kwargs)
+    else:
+        p_dry_hs = p_dry_air = atmpress
+        hcp = henry_coefficient(varname, temp_eq, method, units, **hcp_kwargs)
+    p_hs = c_hs.to("dimensionless") * p_dry_hs.to("Pa")
+    p_air = c_air.to("dimensionless") * p_dry_air.to("Pa")
+    n_hs = (p_hs * vol_hs / (r_gas * temp_eq.to("K"))).to("mol")
+    n_air = (p_air * vol_hs / (r_gas * temp_air.to("K"))).to("mol")
     n_aq = (hcp * p_hs * vol_water).to("mol")
     return n_hs, n_air, n_aq, vol_water
 
@@ -296,6 +360,8 @@ def headspace_concentration(
     vol_hs: Numeric,
     vol_total: Numeric,
     method: str = "Sanders",
+    vapour: bool = False,
+    rh_air: Numeric = 1.0,
     units: dict[str, str] = {},
     **kwargs,
 ) -> PlainQuantity:
@@ -311,7 +377,12 @@ def headspace_concentration(
     where n_hs = p_hs V_hs / (R T_eq) is the gas in the headspace after
     shaking, n_aq = H_cp p_hs V_water the gas left in the water after
     shaking, and n_air = p_air V_hs / (R T_air) the gas in the headspace
-    before shaking. Partial pressures are mole fraction x atmpress.
+    before shaking. Partial pressures are mole fraction x atmpress, or, with
+    vapour=True, dry mole fraction x (atmpress - pH2O): pH2O at saturation
+    at temp_eq (and salt) after shaking, and rh_air x pH2O at temp_air (fresh
+    water) before shaking (Weiss and Price 1980). With vapour=True the CH4
+    "Wiesenburg" coefficient, which includes the water vapour, is converted to
+    the coefficient per partial pressure of CH4.
 
     Parameters
     ----------
@@ -324,8 +395,11 @@ def headspace_concentration(
     vol_hs : headspace volume (default mL)
     vol_total : total volume of the bottle/syringe (default mL)
     method : Henry's coefficient method, see henry_coefficient
+    vapour : correct the partial pressures for water vapour (c_hs and c_air
+             are then dry mole fractions, as from a Picarro)
+    rh_air : relative humidity (0-1) of the air before shaking, with vapour
     **kwargs : extra arguments for the Henry's coefficient method,
-               e.g. salt for "Wiesenburg"
+               e.g. salt for "Wiesenburg" (also used for pH2O)
 
     Return
     ------
@@ -333,7 +407,7 @@ def headspace_concentration(
     """
     n_hs, n_air, n_aq, vol_water = _headspace_moles(
         varname, c_hs, c_air, temp_eq, temp_air, atmpress, vol_hs, vol_total,
-        method, units, kwargs,
+        method, vapour, rh_air, units, kwargs,
     )
     return ((n_hs + n_aq - n_air) / vol_water).to("mmol m^-3")
 
@@ -358,6 +432,8 @@ def headspace_d13c(
     vol_hs: Numeric,
     vol_total: Numeric,
     method: str = "Sanders",
+    vapour: bool = False,
+    rh_air: Numeric = 1.0,
     units: dict[str, str] = {},
     **kwargs,
 ) -> PlainQuantity:
@@ -374,8 +450,8 @@ def headspace_d13c(
     c_hs, c_air : headspace concentration after / before shaking (default ppm)
     d13c_hs, d13c_air : d13C of the headspace after / before shaking
                         (default permille)
-    temp_eq, temp_air, atmpress, vol_hs, vol_total, method, **kwargs :
-        see headspace_concentration
+    temp_eq, temp_air, atmpress, vol_hs, vol_total, method, vapour, rh_air,
+    **kwargs : see headspace_concentration
 
     Return
     ------
@@ -383,7 +459,7 @@ def headspace_d13c(
     """
     n_hs, n_air, n_aq, _ = _headspace_moles(
         varname, c_hs, c_air, temp_eq, temp_air, atmpress, vol_hs, vol_total,
-        method, units, kwargs,
+        method, vapour, rh_air, units, kwargs,
     )
     r_std = read_constant()["RVDPD"]
 

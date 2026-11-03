@@ -13,7 +13,8 @@ Implemented methods:
 * Henry's coefficient corrected by temperature (`henry_coefficient`):
     * `"Sanders"` (default): temperature correction only, Sander 2023.
     * `"Wiesenburg"`: temperature and salinity correction. Uses Wiesenburg and Guinasso 1979 for CH<sub>4</sub> (requires `salt` and `catm`) and Weiss 1974 for CO<sub>2</sub> (requires `salt`).
-* Saturation concentration in water (`csat`).
+* Saturation concentration in water (`csat`), optionally with the air saturated with water vapour (`vapour=True`).
+* Water vapour pressure at saturation over fresh water and seawater, Weiss and Price 1980 (`vapour_pressure`).
 * Dissolved gas concentration (`headspace_concentration`) and its δ<sup>13</sup>C (`headspace_d13c`) from headspace equilibrations.
 * Wind speed at height z to wind speed at 10 m (`uz_to_u10`).
 
@@ -75,6 +76,14 @@ d13co2 = pyg.headspace_d13c("CO2", 1506.7, 403.4, -14.0, -8.65, 26.1, 26.2, 1014
 ```
 
 `headspace_d13c` assumes no isotopic fractionation between the water and the headspace after shaking.
+
+By default the partial pressures are mole fraction × `atmpress`. Analysers such as the Picarro give dry mole fractions, while the headspace is saturated with water vapour after shaking; with `vapour=True` the partial pressures are dry mole fraction × (`atmpress` − pH<sub>2</sub>O): pH<sub>2</sub>O at saturation at `temp_eq` (and `salt`) after shaking, and `rh_air` × pH<sub>2</sub>O at `temp_air` for the air before shaking (default `rh_air=1`, saturated). The CH<sub>4</sub> `"Wiesenburg"` coefficient, which describes moist air at 1 atm, is then converted to a coefficient per partial pressure of CH<sub>4</sub>, so the vapour is not counted twice. Near equilibrium the CH<sub>4</sub> result is a small difference between the gas before and after shaking, so the humidity of the air before shaking matters (1 % of the air moles is about 5 % of the result).
+
+```python
+ch4 = pyg.headspace_concentration(
+    "CH4", 2.0, 1.9, 10, 10, 1010, 35, 140, method="Wiesenburg", salt=30, vapour=True
+)
+```
 
 To process many samples from a spreadsheet, see [`examples/headspace_from_excel.py`](examples/headspace_from_excel.py). It reads one sample per row from an Excel file (see [`examples/data/headspace_example.xlsx`](examples/data/headspace_example.xlsx)), calculates CH<sub>4</sub> and CO<sub>2</sub> concentrations and δ<sup>13</sup>C, and writes the results to a new Excel file. Column names, bottle volumes and the salinity column are set at the top of the script. It requires `openpyxl` (`pip install openpyxl`).
 

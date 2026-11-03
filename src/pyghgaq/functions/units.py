@@ -26,6 +26,7 @@ DEFAULT_INPUT_UNITS = {
     "height": "m",
     "Volume": "mL",
     "Isotope_Signature": "permille",
+    "Relative_Humidity": "dimensionless",
 }
 
 def get_default_units():

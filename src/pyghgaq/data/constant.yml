@@ -3,6 +3,9 @@ R: 8.314 #[m3PaK-1mol-1]
 RVDPD: 0.0111802 #Picarro manual Page 102
 Cd: 0.0013 # Large and Pond 1981 
 k: 0.41 # von Karman
+# Water vapour pressure at saturation over seawater (atm), Weiss and Price 1980:
+# ln p = WP80[0] + WP80[1] (100/T) + WP80[2] ln(T/100) + WP80[3] S
+WP80: [24.4543, -67.4509, -4.8489, -0.000544]
 
 ## GASES
 GASES: ['CH4', 'CO2']

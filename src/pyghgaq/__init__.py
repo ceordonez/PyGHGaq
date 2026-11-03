@@ -10,6 +10,7 @@ from .main import (
     kgas_to_k600,
     schmidt_number,
     uz_to_u10,
+    vapour_pressure,
 )
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "k600_to_kgas",
     "schmidt_number",
     "uz_to_u10",
+    "vapour_pressure",
 ]
