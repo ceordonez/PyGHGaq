@@ -4,6 +4,7 @@ This package contains methods to estimate GHG (CH<sub>4</sub> and CO<sub>2</sub>
 
 Implemented methods:
 * Diffusive flux through the water-air interface (`atm_diff_flux`) and gas transfer coefficient from measured fluxes (`kgas`).
+* Floating chamber fluxes: linear slope of the concentration against real time (`chamber_slope`) and flux from that slope (`chamber_flux`).
 * Gas transfer coefficient k<sub>600</sub> (`k600`) using different models:
     * MacIntyre et al. 2010: negative buoyancy (`"MA2010-NB"`, default), positive buoyancy (`"MA2010-PB"`) and all buoyancy conditions (`"MA2010-MB"`).
     * Cole and Caraco 1998 (`"CC1998"`).
@@ -87,6 +88,22 @@ ch4 = pyg.headspace_concentration(
 
 To process many samples from a spreadsheet, see [`examples/headspace_from_excel.py`](examples/headspace_from_excel.py). It reads one sample per row from an Excel file (see [`examples/data/headspace_example.xlsx`](examples/data/headspace_example.xlsx)), calculates CH<sub>4</sub> and CO<sub>2</sub> concentrations and δ<sup>13</sup>C, and writes the results to a new Excel file. Column names, bottle volumes, the salinity column and the water vapour correction (on by default, for dry mole fractions) are set at the top of the script. It requires `openpyxl` (`pip install openpyxl`).
 
+### Floating chambers
+
+The flux follows from the rate of change of the mole fraction in the chamber, $F = \frac{dC}{dt}\frac{P V}{R T A}$. `chamber_slope` fits the line against the real elapsed time (datetimes or seconds), so analysers that do not log exactly every second (an LGR logs every ~0.995 s) still give the slope per second.
+
+```python
+import pandas as pd
+import pyghgaq as pyg
+
+# df: analyser data with a DatetimeIndex and a "[CH4]d_ppm" column
+window = df.loc["2025-01-11 17:34:12":"2025-01-11 17:37:41", "[CH4]d_ppm"]
+fit = pyg.chamber_slope(window.index, window)   # slope, intercept, rvalue, stderr, n
+
+# 16.76 L chamber over 0.126 m^2, 30 degC, 1014 hPa
+flux = pyg.chamber_flux(fit.slope, 16.76, 0.126, 30, 1014)   # mmol m^-2 d^-1
+```
+
 ### Input types
 
 Inputs can be Python or NumPy scalars, NumPy arrays, lists, pandas Series or [Pint](https://pint.readthedocs.io) quantities. All functions return Pint quantities; use `.magnitude` to get the plain values and `.to("<unit>")` to convert them.
@@ -109,6 +126,9 @@ Units are managed with Pint. Values without units are interpreted with the defau
 | `height` | m |
 | `Volume` | mL |
 | `Isotope_Signature` | permille |
+| `Conc_Slope` | ppm/s |
+| `Chamber_Volume` | L |
+| `Chamber_Area` | m^2 |
 
 Defaults can be changed for the whole package:
 ```python

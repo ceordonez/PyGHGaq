@@ -1,5 +1,8 @@
 from .main import (
+    SlopeFit,
     atm_diff_flux,
+    chamber_flux,
+    chamber_slope,
     csat,
     headspace_concentration,
     headspace_d13c,
@@ -14,7 +17,10 @@ from .main import (
 )
 
 __all__ = [
+    "SlopeFit",
     "atm_diff_flux",
+    "chamber_flux",
+    "chamber_slope",
     "csat",
     "headspace_concentration",
     "headspace_d13c",

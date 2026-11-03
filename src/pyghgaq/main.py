@@ -1,6 +1,7 @@
 import importlib
 import inspect
 import pkgutil
+from typing import Any, NamedTuple
 
 import numpy as np
 from pint.facets.plain import PlainQuantity
@@ -8,7 +9,7 @@ from pint.facets.plain import PlainQuantity
 from pyghgaq.functions.read import read_constant
 from pyghgaq.functions.type_utils import Numeric
 from pyghgaq.functions.units import Q_, get_default_units
-from pyghgaq.registry.registry import enforce_units
+from pyghgaq.registry.registry import _as_quantity, enforce_units
 
 
 @enforce_units(
@@ -483,6 +484,117 @@ def headspace_d13c(
     w12 = hs12 + aq12 - air12
     ratio_w = (w13 / w12).to("dimensionless").magnitude
     return Q_((ratio_w / r_std - 1) * 1000, "permille")
+
+
+class SlopeFit(NamedTuple):
+    """Least-squares line fitted by chamber_slope."""
+
+    slope: PlainQuantity
+    intercept: PlainQuantity
+    rvalue: float
+    stderr: PlainQuantity
+    n: int
+
+
+def _elapsed_seconds(time: Any) -> np.ndarray:
+    """Seconds since the first sample, for datetimes or numbers (seconds)."""
+    if isinstance(time, PlainQuantity):
+        return time.to("s").magnitude.astype(float)
+    t = np.asarray(time)
+    if t.dtype == object:
+        # e.g. lists of datetime.datetime or pandas Timestamps
+        t = np.asarray(t, dtype="datetime64[ns]")
+    if np.issubdtype(t.dtype, np.datetime64):
+        return (t - t[0]) / np.timedelta64(1, "s")
+    return t.astype(float)
+
+
+def chamber_slope(
+    time: Any, conc: Numeric, units: dict[str, str] = {}
+) -> SlopeFit:
+    """Linear rate of change of the gas concentration inside a chamber.
+
+    The line is fitted against the real elapsed time, so samples that are
+    not exactly 1 s apart (e.g. an LGR/Picarro logging every ~0.995 s, fast
+    mode, or gaps in the record) give the correct slope per second.
+
+    Parameters
+    ----------
+    time : sample times, as datetimes (datetime64, pandas Series or
+           DatetimeIndex, datetime objects) or as numbers in seconds
+    conc : gas concentration (default ppm, key "conc" in units)
+
+    Return
+    ------
+    SlopeFit(slope, intercept, rvalue, stderr, n): slope and its standard
+    error in ppm s^-1, intercept (concentration at the first sample) in ppm,
+    Pearson correlation coefficient and number of samples.
+    """
+    x = _elapsed_seconds(time)
+    unit = units.get("conc", get_default_units()["Gas_Concentration"])
+    y = _as_quantity(conc, unit).to("ppm").magnitude
+    if x.shape != y.shape:
+        raise ValueError("time and conc must have the same length")
+    n = x.size
+    if n < 3:
+        raise ValueError("chamber_slope needs at least 3 samples")
+
+    dx = x - x.mean()
+    dy = y - y.mean()
+    sxx = np.sum(dx**2)
+    syy = np.sum(dy**2)
+    if sxx == 0:
+        raise ValueError("all time values are equal")
+    slope = np.sum(dx * dy) / sxx
+    intercept = y.mean() - slope * x.mean()
+    rvalue = float(np.sum(dx * dy) / np.sqrt(sxx * syy)) if syy > 0 else 0.0
+    resid = dy - slope * dx
+    stderr = np.sqrt(np.sum(resid**2) / (n - 2) / sxx)
+    return SlopeFit(
+        Q_(slope, "ppm/s"), Q_(intercept, "ppm"), rvalue, Q_(stderr, "ppm/s"), n
+    )
+
+
+@enforce_units(
+    unit_getter=get_default_units,
+    unit_map={
+        "slope": "Conc_Slope",
+        "volume": "Chamber_Volume",
+        "area": "Chamber_Area",
+        "temp": "Temperature",
+        "atmpress": "Atm_Pressure",
+    },
+)
+def chamber_flux(
+    slope: Numeric,
+    volume: Numeric,
+    area: Numeric,
+    temp: Numeric,
+    atmpress: Numeric,
+    units: dict[str, str] = {},
+) -> PlainQuantity:
+    """Flux from the rate of change of concentration in a (floating) chamber.
+
+        F = (dC/dt) P V / (R T A)
+
+    where P V / (R T) are the moles of air in the chamber (ideal gas).
+
+    Parameters
+    ----------
+    slope : rate of change of the mole fraction in the chamber
+            (default ppm s^-1), e.g. chamber_slope(...).slope
+    volume : chamber volume, including tubing and analyser (default L)
+    area : water surface covered by the chamber (default m^2)
+    temp : air temperature in the chamber (default degC)
+    atmpress : pressure in the chamber (default hPa)
+
+    Return
+    ------
+    Flux (mmol m^-2 d^-1), positive = emission to the atmosphere
+    """
+    r_gas = Q_(read_constant()["R"], "J mol^-1 K^-1")
+    n_air = atmpress.to("Pa") * volume.to("m^3") / (r_gas * temp.to("K"))
+    return (slope.to("1/s") * n_air / area.to("m^2")).to("mmol m^-2 d^-1")
 
 
 if __name__ == "__main__":

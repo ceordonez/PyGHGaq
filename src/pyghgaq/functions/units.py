@@ -27,6 +27,9 @@ DEFAULT_INPUT_UNITS = {
     "Volume": "mL",
     "Isotope_Signature": "permille",
     "Relative_Humidity": "dimensionless",
+    "Conc_Slope": "ppm/s",
+    "Chamber_Volume": "L",
+    "Chamber_Area": "m^2",
 }
 
 def get_default_units():
