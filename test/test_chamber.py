@@ -19,7 +19,7 @@ def test_chamber_flux_hand_calculation():
 
 
 def test_chamber_flux_matches_lgr_surfflux_formula():
-    # Formula used by LGR_SurfFlux before it called pyghgaq (R = 8.31451)
+    # Formula used by PyChamberFlux (formerly LGR_SurfFlux) before it called pyghgaq (R = 8.31451)
     slope, vol, area, temp, press = 2.5e-4, 16.76, 0.126, 30.0, 1014.0
     molar_volume = 8.31451 * (temp + 273.15) / (press * 100) * 1000  # L/mol
     old = slope * vol / (molar_volume * area) * 86.4
