@@ -36,6 +36,14 @@ TEMP_AIR = "AirT_degC"  # air temperature when the headspace was filled (degC)
 PRESSURE = "AirP_hPa"  # atmospheric pressure (hPa)
 SALINITY = "sal_psu"  # salinity (PSU); set to None for freshwater
 
+# Water vapour correction. Analysers such as the Picarro give dry mole
+# fractions, while the headspace is saturated with water vapour after
+# shaking: with VAPOUR = True the partial pressures use atmpress - pH2O.
+VAPOUR = True
+# Relative humidity (0-1) of the air before shaking: a column name, a
+# number for all samples, or None for saturated air (1). Only used with VAPOUR.
+RH_AIR = None
+
 # Columns for each gas:
 #   c_hs     headspace concentration after shaking (ppm)
 #   c_air    headspace concentration before shaking (ppm)
@@ -75,8 +83,11 @@ def process(data: pd.DataFrame) -> pd.DataFrame:
         "atmpress": data[PRESSURE],
         "vol_hs": VOL_HS,
         "vol_total": VOL_TOTAL,
+        "vapour": VAPOUR,
         **henry,
     }
+    if VAPOUR and RH_AIR is not None:
+        common["rh_air"] = data[RH_AIR] if isinstance(RH_AIR, str) else RH_AIR
 
     for gas, cols in GASES.items():
         c_hs, c_air = data[cols["c_hs"]], data[cols["c_air"]]

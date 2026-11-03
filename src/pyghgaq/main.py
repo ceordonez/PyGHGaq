@@ -60,7 +60,7 @@ def csat(
     # CH4 "Wiesenburg" require it (henry_coefficient drops it when unused).
     if vapour:
         hcp = _vapour_free_henry(var, temp, method, units, {"catm": catm, **kwargs})
-        pressure = atmpress - vapour_pressure(temp, kwargs.get("salt", 0))
+        pressure = atmpress - _salt_vapour_pressure(temp, units, kwargs)
     else:
         hcp = henry_coefficient(var, temp, method, units, catm=catm, **kwargs)
         pressure = atmpress
@@ -91,6 +91,14 @@ def vapour_pressure(
     return Q_(np.exp(c[0] + c[1] / t + c[2] * np.log(t) + c[3] * s), "atm").to("hPa")
 
 
+def _salt_vapour_pressure(
+    temp: PlainQuantity, units: dict[str, str], kwargs: dict
+) -> PlainQuantity:
+    """vapour_pressure for the salt in kwargs, keeping the caller's salt unit."""
+    salt_units = {"salt": units["salt"]} if "salt" in units else {}
+    return vapour_pressure(temp, kwargs.get("salt", 0), units=salt_units)
+
+
 # Henry's coefficient methods that give the equilibrium with water-saturated
 # air at 1 atm rather than with the dry gas (Wiesenburg and Guinasso 1979)
 _MOIST_AIR_METHODS = {("CH4", "Wiesenburg")}
@@ -102,7 +110,7 @@ def _vapour_free_henry(
     """Henry's coefficient per unit partial pressure of the gas itself."""
     hcp = henry_coefficient(varname, temp, method, units, **kwargs)
     if (varname, method) in _MOIST_AIR_METHODS:
-        ph2o = vapour_pressure(temp, kwargs.get("salt", 0))
+        ph2o = _salt_vapour_pressure(temp, units, kwargs)
         hcp = hcp / (1 - (ph2o / Q_(1, "atm")).to("dimensionless"))
     return hcp
 
@@ -335,7 +343,7 @@ def _headspace_moles(
     if vapour:
         # Dry mole fractions: the headspace is saturated with water vapour at
         # temp_eq after shaking; the air before shaking has rh_air at temp_air
-        p_dry_hs = atmpress - vapour_pressure(temp_eq, kwargs.get("salt", 0))
+        p_dry_hs = atmpress - _salt_vapour_pressure(temp_eq, units, kwargs)
         p_dry_air = atmpress - rh_air.to("dimensionless") * vapour_pressure(temp_air)
         hcp = _vapour_free_henry(varname, temp_eq, method, units, hcp_kwargs)
     else:

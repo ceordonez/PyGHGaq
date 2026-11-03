@@ -112,3 +112,43 @@ def test_csat_vapour_ch4_wiesenburg_at_1_atm_unchanged():
     plain = pyg.csat("CH4", 1013.25, 1.9, 10, method="Wiesenburg", salt=35)
     moist = pyg.csat("CH4", 1013.25, 1.9, 10, method="Wiesenburg", salt=35, vapour=True)
     np.testing.assert_allclose(moist.magnitude, plain.magnitude, rtol=1e-10)
+
+
+@pytest.mark.parametrize("gas, c_hs, c_air, d_hs, d_air", [
+    ("CH4", 6.85, 1.85, -66.7, -50.9),
+    ("CO2", 1506.7, 403.4, -14.0, -8.65),
+])
+def test_headspace_d13c_vapour_equals_dry_pressure(gas, c_hs, c_air, d_hs, d_air):
+    # With a coefficient per partial pressure (Sanders), fresh water, the air
+    # saturated (rh_air=1) and temp_air = temp_eq, both partial pressures use
+    # P - pH2O(temp): vapour=True is the default calculation at that pressure
+    temp, press = 15.0, 1012.0
+    dry = press - pyg.vapour_pressure(temp).magnitude
+    args = (gas, c_hs, c_air, d_hs, d_air, temp, temp)
+    with_vapour = pyg.headspace_d13c(*args, press, 35, 140, vapour=True, rh_air=1)
+    at_dry = pyg.headspace_d13c(*args, dry, 35, 140)
+    np.testing.assert_allclose(with_vapour.magnitude, at_dry.magnitude, rtol=1e-10)
+    # Scaling all partial pressures by the same factor leaves d13C unchanged;
+    # dry air before shaking (rh_air=0) does not, so d13C must change
+    plain = pyg.headspace_d13c(*args, press, 35, 140)
+    np.testing.assert_allclose(with_vapour.magnitude, plain.magnitude, rtol=1e-10)
+    dry_air = pyg.headspace_d13c(*args, press, 35, 140, vapour=True, rh_air=0)
+    assert abs(dry_air.magnitude - with_vapour.magnitude) > 1e-3
+
+
+def test_vapour_salt_unit_override_reaches_vapour_pressure():
+    # salt given as a mass fraction through units must give the same result as
+    # the equivalent salinity in PSU, for the Henry's coefficient and for pH2O
+    psu = {"method": "Wiesenburg", "salt": 35, "vapour": True}
+    frac = {"method": "Wiesenburg", "salt": 0.035, "vapour": True,
+            "units": {"salt": "dimensionless"}}
+    for gas, catm in (("CO2", 410), ("CH4", 1.9)):
+        np.testing.assert_allclose(
+            pyg.csat(gas, 1005, catm, 10, **frac).magnitude,
+            pyg.csat(gas, 1005, catm, 10, **psu).magnitude, rtol=1e-10,
+        )
+        args = (gas, catm * 3, catm, 10, 12, 1005, 35, 140)
+        np.testing.assert_allclose(
+            pyg.headspace_concentration(*args, **frac).magnitude,
+            pyg.headspace_concentration(*args, **psu).magnitude, rtol=1e-10,
+        )
