@@ -4,10 +4,30 @@ from functools import wraps
 from inspect import signature
 from typing import Any, Callable
 
-import numpy as np
+import numbers
 
-from pyghgaq.functions.type_utils import Numeric
+import numpy as np
+from pint.facets.plain import PlainQuantity
+
 from pyghgaq.functions.units import Q_
+
+
+def _as_quantity(value: Any, unit: str) -> Any:
+    """Attach `unit` to a numeric value, or convert a Quantity to `unit`.
+
+    Accepts Python/NumPy scalars, NumPy arrays, lists, tuples and array-likes
+    such as pandas Series (converted to float ndarrays). Anything else
+    (strings, None, dicts, ...) is returned unchanged.
+    """
+    if isinstance(value, PlainQuantity):
+        return Q_(value, unit)
+    if isinstance(value, bool) or isinstance(value, str):
+        return value
+    if isinstance(value, numbers.Number):
+        return Q_(value, unit)
+    if isinstance(value, (list, tuple)) or hasattr(value, "__array__"):
+        return Q_(np.asarray(value, dtype=float), unit)
+    return value
 
 type exporterfunc = Callable[..., np.ndarray | float]
 type exporterhcp = dict[str, dict[str, Callable]]
@@ -111,17 +131,12 @@ def enforce_units(unit_getter: Callable, unit_map: dict[str, str] = {}):
 
             # Loop through the FINAL effective units for conversion
             for name, exp_unit in effective_units.items():
-                if name in bound.arguments and isinstance(
-                    bound.arguments[name], Numeric
-                ):
-                    # NOTE: Since you're using 'effective_units' here,
-                    # you only need to convert to SI *if the value is a plain number*.
-
-                    # If the argument value is NOT already a Pint Quantity (i.e., it's a raw number)
-                    # we must treat it as being in the 'exp_unit' (which is either the default or the override).
-
-                    # This section handles the automatic tagging and conversion
-                    bound.arguments[name] = Q_(bound.arguments[name], exp_unit)
+                if name in bound.arguments:
+                    # Raw numbers/arrays are tagged with exp_unit (default or
+                    # user override); Quantities are converted to exp_unit.
+                    bound.arguments[name] = _as_quantity(
+                        bound.arguments[name], exp_unit
+                    )
                     # bound.arguments[name] = to_si(
                     #     bound.arguments[name]
                     # )  # Assuming to_si converts to base SI units

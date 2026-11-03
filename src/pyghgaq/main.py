@@ -47,7 +47,9 @@ def csat(
     -------
     Concentration of saturation in mmolm3
     """
-    hcp = henry_coefficient(var, temp, method, units, **kwargs)
+    # catm is a named argument here, so forward it explicitly: methods such as
+    # CH4 "Wiesenburg" require it (henry_coefficient drops it when unused).
+    hcp = henry_coefficient(var, temp, method, units, catm=catm, **kwargs)
     return atmpress.to("Pa") * catm.to_base_units() * hcp.to("mmol m^-3 Pa^-1")
 
 
@@ -152,6 +154,8 @@ def k600(
 
     sig = inspect.signature(exporter)
     valid_kwargs = {k: v for k, v in kwargs.items() if k in sig.parameters}
+    if "units" in sig.parameters:
+        valid_kwargs["units"] = units
     return exporter(u10, **valid_kwargs).to("m/d")
 
 
@@ -213,21 +217,21 @@ def kgas_to_k600(
 
 @enforce_units(unit_getter=get_default_units, unit_map={"temp": "Temperature"})
 def schmidt_number(varname: str, temp: Numeric) -> float | np.ndarray:
-    from pyghgaq.registry.registry import exporterssh
-
     """Calculates Schmidt number for gases
 
     Parameters:
     ----------
-    varname : gas name
-    temp_c : water temperature (degC)
+    varname : gas name, e.g. "CO2", "CH4" (freshwater) or "CO2-salt",
+              "CH4-salt" (seawater)
+    temp : water temperature (default unit degC)
 
     Return
     ------
     Schmidt number
     """
+    from pyghgaq.functions.functions import schmidt_number as _schmidt_number
 
-    return exporterssh[varname](temp)
+    return _schmidt_number(varname, temp.to("degC"))
 
 
 if __name__ == "__main__":

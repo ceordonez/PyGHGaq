@@ -1,11 +1,14 @@
 import numpy as np
 from pint.facets.plain import PlainQuantity
 
-from pyghgaq.functions.units import Q_
-from pyghgaq.registry.registry import register_k600
+from pyghgaq.functions.units import Q_, get_default_units
+from pyghgaq.registry.registry import enforce_units, register_k600
 
 
 @register_k600("VP2013")
+@enforce_units(
+    unit_getter=get_default_units, unit_map={"u10": "WindSpeed", "area": "Area"}
+)
 def k600_VP2013(
     u10: PlainQuantity, area: PlainQuantity, units: dict[str, str] = {}
 ) -> PlainQuantity:
@@ -122,10 +125,8 @@ def kgas_k600(
     temp = temp.to("degC")
     k = k.to("m/d")
     # Prairie and del Giorgo 2013
-    if isinstance(u10.magnitude, float) or isinstance(u10.magnitude, int):
-        n = 1 / 2 if u10.magnitude > 3.7 else 2 / 3
-    else:
-        n = np.ones(len(u10.magnitude)) * 1 / 2
-        n = np.where(u10.magnitude > 3.7, n, 2 / 3.0)
+    n = np.where(np.asarray(u10.magnitude) > 3.7, 1 / 2, 2 / 3)
+    if n.ndim == 0:
+        n = float(n)
     sch = schmidt_number(varname, temp)
     return k * (600 / sch) ** (n * a)
