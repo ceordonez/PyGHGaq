@@ -24,17 +24,23 @@ def setup_mock_registries(monkeypatch):
     import pyghgaq.registry.registry
 
     # Mock exportershcp
-    mock_henry = lambda varname, temp, **kwargs: Q_(1, "mmol m^-3 Pa^-1")
+    def mock_henry(varname, temp, **kwargs):
+        return Q_(1, "mmol m^-3 Pa^-1")
+
     monkeypatch.setitem(
         pyghgaq.registry.registry.exportershcp, "CO2", {"Sanders": mock_henry}
     )
 
     # Mock exportersk600
-    mock_k600 = lambda u10, **kwargs: Q_(1, "m/d")
+    def mock_k600(u10, **kwargs):
+        return Q_(1, "m/d")
+
     monkeypatch.setitem(pyghgaq.registry.registry.exportersk600, "MA2010-NB", mock_k600)
 
     # Mock exporterssh (Schmidt number calculator)
-    mock_schmidt = lambda temp: 1000.0
+    def mock_schmidt(temp):
+        return 1000.0
+
     monkeypatch.setitem(pyghgaq.registry.registry.exporterssh, "CO2", mock_schmidt)
 
     # Mock pyghgaq.gases and pyghgaq.gases.CO2 module presence

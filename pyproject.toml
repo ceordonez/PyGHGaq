@@ -27,6 +27,7 @@ Issues = "https://github.com/ceordonez/PyGHGaq/issues"
 [dependency-groups]
 dev = [
     "pytest>=9.0.1",
+    "ruff>=0.17.3",
 ]
 
 [build-system]
@@ -46,3 +47,13 @@ explicit = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pyghgaq"]
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+# pyflakes, pycodestyle errors/warnings, import order
+select = ["F", "E", "W", "I"]

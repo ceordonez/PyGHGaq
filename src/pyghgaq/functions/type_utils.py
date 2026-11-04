@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import TypeAlias, TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeAlias
 
+import numpy as np
 from pint import Quantity
 from pint.facets.plain import PlainQuantity
-import numpy as np
 
 if TYPE_CHECKING:
     pass

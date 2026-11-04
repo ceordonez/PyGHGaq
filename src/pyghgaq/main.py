@@ -186,7 +186,9 @@ def henry_coefficient(
 
     if exporter is None:
         raise ValueError(
-            f"No method ='{method}' found for varname='{varname}' or '{varname}' is not included in functions \n Supported method for '{varname}' are {list(exportershcp.get(varname, {}).keys())}"
+            f"No method ='{method}' found for varname='{varname}' or '{varname}' is not "
+            f"included in functions \n Supported method for '{varname}' are "
+            f"{list(exportershcp.get(varname, {}).keys())}"
         )
     sig = inspect.signature(exporter)
     valid_kwargs = {k: v for k, v in kwargs.items() if k in sig.parameters}
@@ -212,7 +214,8 @@ def k600(
     exporter = exportersk600.get(k600_method)
     if exporter is None:
         raise ValueError(
-            f"'{k600_method}' is not included as valid method in k600_models.py \n Supported methods are {list(exportersk600.keys())}"
+            f"'{k600_method}' is not included as valid method in k600_models.py \n "
+            f"Supported methods are {list(exportersk600.keys())}"
         )
 
     sig = inspect.signature(exporter)

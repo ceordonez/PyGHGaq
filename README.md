@@ -1,5 +1,7 @@
 # PyGHGaq
 
+[![tests](https://github.com/ceordonez/PyGHGaq/actions/workflows/tests.yml/badge.svg)](https://github.com/ceordonez/PyGHGaq/actions/workflows/tests.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENCE)
+
 This package contains methods to estimate GHG (CH<sub>4</sub> and CO<sub>2</sub>) emissions and concentrations in aquatic ecosystems.
 
 Implemented methods:
@@ -148,6 +150,16 @@ from pyghgaq.functions.units import Q_
 
 k = pyg.k600(Q_(18, "km/h"))
 ```
+
+## Development
+
+```bash
+uv sync            # environment with the test tools
+uv run pytest      # tests
+uv run ruff check  # lint
+```
+
+GitHub Actions runs the lint and the tests on every push.
 
 ## IMPORTANT
 This package is still under development.

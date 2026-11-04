@@ -1,10 +1,9 @@
 import inspect
+import numbers
 from copy import deepcopy
 from functools import wraps
 from inspect import signature
 from typing import Any, Callable
-
-import numbers
 
 import numpy as np
 from pint.facets.plain import PlainQuantity
@@ -102,7 +101,8 @@ def enforce_units(unit_getter: Callable, unit_map: dict[str, str] = {}):
             current_defaults = unit_getter()
 
             # B. Get the user-provided explicit units from the function arguments
-            # This is the dictionary the user passed to the function (e.g., csat(..., units={'atmpress': 'psi'}))
+            # This is the dictionary the user passed to the function
+            # (e.g., csat(..., units={'atmpress': 'psi'}))
             user_overrides = bound.arguments.get("units", {})
 
             # C. Create the FINAL effective units for this call:
@@ -123,7 +123,9 @@ def enforce_units(unit_getter: Callable, unit_map: dict[str, str] = {}):
                     if name in current_defaults:
                         effective_units[param_name] = current_defaults[name]
                     else:
-                        if name not in ['kwargs'] and not isinstance(bound.arguments[param_name], (str, bool)):
+                        if name not in ["kwargs"] and not isinstance(
+                            bound.arguments[param_name], (str, bool)
+                        ):
                             print(f'Units not found for: {param_name}')
 
 
